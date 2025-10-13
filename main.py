@@ -9,7 +9,7 @@ intents.message_content = True
 client = discord.Client(intents=intents)
 
 def get_env_var() -> str:
-    dotenv_path = ".env"
+    dotenv_path = "../.env"
     load_dotenv(dotenv_path)
     key = "DIS_TOKEN"
 
