@@ -1,13 +1,17 @@
-x = """
-+------------------+---------+---------+
-| 2025-10-08 15:25 |  Horní  |  Dolní  |
-+------------------+---------+---------+
-| Smart entry zone | 6773.20 | 6771.40 |
-|   Denní levely   | 6796.48 | 6753.52 |
-|  Týdenní levely  | 6786.44 | 6693.56 |
-+------------------+---------+---------+/
-"""
-y = x.split("|")
-print(y[6:8])
-for i in y[6:8]:
-    print(float(i.strip()))
+import os
+from dotenv import load_dotenv, set_key
+
+def get_env_var() -> str:
+    dotenv_path = ".env"
+    load_dotenv(dotenv_path)
+    key = "DIS_TOKEN"
+
+    val = os.getenv(key)
+    if val:
+        return val
+    else:
+        val = input("Discord Bot Token nenalezen. Zadejte jej prosím: ")
+        set_key(dotenv_path, key, val)
+        return val
+
+print(get_env_var())
