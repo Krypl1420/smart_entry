@@ -4,7 +4,7 @@ from dotenv import load_dotenv, set_key
 def get_env_var() -> str:
     dotenv_path = ".env"
     load_dotenv(dotenv_path)
-    key = "DIS_TOKEN"
+    key = "DIS_TOKE"
 
     val = os.getenv(key)
     if val:
