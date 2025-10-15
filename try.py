@@ -1,17 +1,23 @@
-import os
-from dotenv import load_dotenv, set_key
+from selenium import webdriver
+from selenium.webdriver.chrome.service import Service
+from selenium.webdriver.chrome.options import Options
+from webdriver_manager.chrome import ChromeDriverManager
 
-def get_env_var() -> str:
-    dotenv_path = ".env"
-    load_dotenv(dotenv_path)
-    key = "DIS_TOKE"
+# Replace this with your Discord channel URL
+url = "https://discord.com/channels/@me/1427685330311712829"
 
-    val = os.getenv(key)
-    if val:
-        return val
-    else:
-        val = input("Discord Bot Token nenalezen. Zadejte jej prosím: ")
-        set_key(dotenv_path, key, val)
-        return val
+# --- Setup Chrome options ---
+options = Options()
+# comment this out if you want to see the browser window
+# options.add_argument("--headless=new")
 
-print(get_env_var())
+# keeps Chrome logged in if you specify a profile directory
+# options.add_argument("--user-data-dir=C:/Users/YourName/AppData/Local/Google/Chrome/User Data")
+
+# --- Launch the browser ---
+driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
+
+# --- Open the Discord chat URL ---
+driver.get(url)
+
+print("Discord chat opened.")
