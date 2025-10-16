@@ -1,45 +1,85 @@
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
-from selenium.webdriver.common.by import By
+from selenium.webdriver.chrome.options import Options
+from webdriver_manager.chrome import ChromeDriverManager
 import time
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
 
-def scan_new_dom_elements(url, observe_time=10):
+# Discord chat URL
+url = "https://discord.com/channels/1427735994538659890/1427735994538659893"
 
-    driver = webdriver.Chrome(service=Service())
-    driver.get(url)
-    time.sleep(2)  # Wait for initial load
+options = Options()
+# options.add_argument("--headless=new")  # comment out if you want visible browser
+options.add_argument(r"user-data-dir=D:\selenium")
+options.add_argument("profile-directory=Default")  # or "Profile 1"
+options.binary_location = r"C:\Program Files (x86)\Google\Chrome\Application\chrome.exe"
 
-    # Inject MutationObserver script
-    observer_script = """
-    window.newElements = [];
-    var observer = new MutationObserver(function(mutations) {
-        mutations.forEach(function(mutation) {
-            mutation.addedNodes.forEach(function(node) {
-                if (node.nodeType === 1) { // Element node
-                    window.newElements.push(node.outerHTML);
+options.add_argument("--no-sandbox")
+# options.add_argument("--disable-dev-shm-usage")
+# options.add_argument("--disable-gpu")
+# options.add_argument("--remote-debugging-port=9222")
+# options.add_argument("--no-first-run")
+# options.add_argument("--no-default-browser-check")
+
+driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
+driver.get(url)
+time.sleep(5)  # wait for page to load
+
+# --- Inject MutationObserver on <ol> ---
+observer_js = """
+if (!window.__observerInjected) {
+    window.__observerInjected = true;
+
+    const target = document.querySelector('ol');
+    if (target) {
+        const observer = new MutationObserver(mutations => {
+            for (const mutation of mutations) {
+                for (const node of mutation.addedNodes) {
+
+                    if (
+                        node.tagName?.toLowerCase() === 'li' &&
+                        node.className === "messageListItem__5126c"
+                        ) {
+                        const spans = node.querySelectorAll('span');
+                        if (spans.length >= 2) {
+                            for (const span of spans) {
+                                console.log(span.textContent,"|", span.className);
+                                console.log("-----");
+                            }
+                            window.__latestElement = {
+                                text: "error"
+                            };
+                        }else{
+                            window.__latestElement = {
+                                text: node.textContent
+                            };
+                        }
+
+
+                    }
+
                 }
-            });
+            }
         });
-    });
-    observer.observe(document.body, { childList: true, subtree: true });
-    """
+        observer.observe(target, { childList: true, subtree: true });
+    }
+}
+"""
+driver.execute_script(observer_js)
+print("Observer injected, monitoring <ol>...")
 
-    driver.execute_script(observer_script)
+# --- Loop to fetch new element immediately when it appears ---
+last_content = None
 
-    # Wait for observe_time seconds to collect new elements
-    time.sleep(observe_time)
-
-    # Get collected new elements
-    new_elements = driver.execute_script("return window.newElements;")
-
+try:
+    while True:
+        newest = driver.execute_script("return window.__latestElement || null;")
+        if newest and newest.get("text") != last_content:
+            last_content = newest.get("text")
+            print("New message detected:")
+            print(last_content)
+            print("---")
+        time.sleep(0.05)  # small sleep to avoid CPU spike
+except KeyboardInterrupt:
+    print("Stopped monitoring.")
+finally:
     driver.quit()
-    return new_elements
-
-# Example usage:
-if __name__ == "__main__":
-    url = "https://example.com"
-    new_dom_elements = scan_new_dom_elements(url)
-    print(f"Found {len(new_dom_elements)} new DOM elements.")
-    # Optionally print or process new_dom_elements
