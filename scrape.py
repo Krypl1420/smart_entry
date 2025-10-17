@@ -24,23 +24,50 @@ NAME = get_env_var("email")
 PASS = get_env_var("heslo")
 
 options = Options()
-options.add_argument("--headless=new")  # comment out if you want visible browser
+# options.add_argument("--headless=new")  # comment out if you want visible browser
 
 options.add_experimental_option("detach", False)
 options.add_argument("--no-sandbox")
-# options.add_argument("--disable-dev-shm-usage")
-# options.add_argument("--disable-gpu")
-# options.add_argument("--remote-debugging-port=9222")
-# options.add_argument("--no-first-run")
-# options.add_argument("--no-default-browser-check")
 
 driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
 driver.get(URL)
-time.sleep(5)  # wait for page to load
+time.sleep(10)  # wait for page to load
+# --- Log in ---
+driver.execute_script(f"""
+console.log(window.location.pathname);
 
+if (window.location.pathname === "/login") {{
+    const email = document.querySelector('[autocomplete~="username"]');
+    const password = document.querySelector('[autocomplete~="current-password"]');
+    const submit = document.querySelector('button[type="submit"]');
+    console.log(email, password, submit, "LOGIN ELEMENTS");
+
+    if (email && password && submit) {{
+        function setNativeValue(element, value) {{
+            const valueSetter = Object.getOwnPropertyDescriptor(element.__proto__, 'value').set;
+            const prototype = Object.getPrototypeOf(element);
+            const prototypeValueSetter = Object.getOwnPropertyDescriptor(prototype, 'value').set;
+            if (valueSetter && valueSetter !== prototypeValueSetter) {{
+                prototypeValueSetter.call(element, value);
+            }} else {{
+                valueSetter.call(element, value);
+            }}
+            element.dispatchEvent(new Event('input', {{ bubbles: true }}));
+            element.dispatchEvent(new Event('change', {{ bubbles: true }}));
+        }}
+
+        setNativeValue(email, "{NAME}");
+        setNativeValue(password, "{PASS}");
+
+        setTimeout(() => {{
+            submit.click();
+        }}, 800);
+    }}
+}}
+""")
+time.sleep(2)
 # --- Inject MutationObserver on <ol> ---
 observer_js = """
-if(window.location.href.indexOf("discord.com/channels") === -1){
 if (!window.__observerInjected) {
     window.__observerInjected = true;
 
