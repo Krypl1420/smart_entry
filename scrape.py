@@ -19,55 +19,83 @@ def get_env_var(key: str) -> str:
         print("\n")
         dotenv.set_key(dotenv_path, key, val)
         return val
+def clear_env_var():
+    dotenv_path = "../.env"
+    dotenv.set_key(dotenv_path, "email", "")
+    dotenv.set_key(dotenv_path, "heslo", "")
+
 
 NAME = get_env_var("email")
 PASS = get_env_var("heslo")
 
 options = Options()
-# options.add_argument("--headless=new")  # comment out if you want visible browser
-
+while (True):
+    x = input("1) Zapnout program 2) Zapnout s viditelnym prohlizecem 3) Nove prihlasovaci udaje !vymaze stare!(jde změnit v .env): ").strip()
+    if x == "1":
+        options.add_argument("--headless=new")
+        break
+    elif x == "2":
+        break
+    elif x == "3":
+        clear_env_var()
+        break
+    else:
+        print("Neplatna volba, zkus to znovu.")
 options.add_experimental_option("detach", False)
 options.add_argument("--no-sandbox")
 
 driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
 driver.get(URL)
-time.sleep(10)  # wait for page to load
+time.sleep(3)  # wait for page to load
 # --- Log in ---
 driver.execute_script(f"""
 console.log(window.location.pathname);
+function sleep(ms) {{
+    return new Promise(resolve => setTimeout(resolve, ms));
+}}
+if (window.location.pathname === "/login" && document.readyState === "interactive") {{
+    console.log("On login page");
+}}else{{
+    console.log("Not on login page");
+    await sleep(5000);
+}}
 
-if (window.location.pathname === "/login") {{
-    const email = document.querySelector('[autocomplete~="username"]');
-    const password = document.querySelector('[autocomplete~="current-password"]');
-    const submit = document.querySelector('button[type="submit"]');
-    console.log(email, password, submit, "LOGIN ELEMENTS");
+const email = document.querySelector('[autocomplete~="username"]');
+const password = document.querySelector('[autocomplete~="current-password"]');
+const submit = document.querySelector('button[type="submit"]');
+console.log(email, password, submit, "LOGIN ELEMENTS");
 
-    if (email && password && submit) {{
-        function setNativeValue(element, value) {{
-            const valueSetter = Object.getOwnPropertyDescriptor(element.__proto__, 'value').set;
-            const prototype = Object.getPrototypeOf(element);
-            const prototypeValueSetter = Object.getOwnPropertyDescriptor(prototype, 'value').set;
-            if (valueSetter && valueSetter !== prototypeValueSetter) {{
-                prototypeValueSetter.call(element, value);
-            }} else {{
-                valueSetter.call(element, value);
-            }}
-            element.dispatchEvent(new Event('input', {{ bubbles: true }}));
-            element.dispatchEvent(new Event('change', {{ bubbles: true }}));
+if (email && password && submit) {{
+    function setNativeValue(element, value) {{
+        const valueSetter = Object.getOwnPropertyDescriptor(element.__proto__, 'value').set;
+        const prototype = Object.getPrototypeOf(element);
+        const prototypeValueSetter = Object.getOwnPropertyDescriptor(prototype, 'value').set;
+        if (valueSetter && valueSetter !== prototypeValueSetter) {{
+            prototypeValueSetter.call(element, value);
+        }} else {{
+            valueSetter.call(element, value);
         }}
-
-        setNativeValue(email, "{NAME}");
-        setNativeValue(password, "{PASS}");
-
-        setTimeout(() => {{
-            submit.click();
-        }}, 800);
+        element.dispatchEvent(new Event('input', {{ bubbles: true }}));
+        element.dispatchEvent(new Event('change', {{ bubbles: true }}));
     }}
+
+    setNativeValue(email, "{NAME}");
+    setNativeValue(password, "{PASS}");
+
+    setTimeout(() => {{
+        submit.click();
+    }}, 800);
 }}
 """)
-time.sleep(2)
+time.sleep(1)
 # --- Inject MutationObserver on <ol> ---
 observer_js = """
+function sleep(ms) {{
+    return new Promise(resolve => setTimeout(resolve, ms));
+}}
+if(!window.location.pathname.includes("/channels/") || document.readyState !== "complete"){
+    await sleep(5000);
+}
 if (!window.__observerInjected) {
     window.__observerInjected = true;
 
@@ -96,7 +124,7 @@ if (!window.__observerInjected) {
                             }
                         }
                         if (mySpan) {
-
+                            console.log("New message detected:", mySpan.innerText);
                             window.__latestElement = {
                                 text: mySpan.innerText,
                                 time: new Date().toLocaleString()
