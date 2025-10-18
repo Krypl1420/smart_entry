@@ -4,6 +4,8 @@ from selenium.webdriver.chrome.options import Options
 from webdriver_manager.chrome import ChromeDriverManager
 import time
 import dotenv
+import atexit
+import psutil
 
 # Discord chat URL
 URL = "https://discord.com/channels/1427735994538659890/1427735994538659893"
@@ -25,6 +27,20 @@ def clear_env_var():
     dotenv.set_key(dotenv_path, "heslo", "")
 
 
+def kill_chrome_processes():
+    for proc in psutil.process_iter(['pid', 'name']):
+        name = proc.info['name']
+        if not name:
+            continue
+        if "chrome" in name.lower() or "chromedriver" in name.lower():
+            try:
+                proc.kill()
+            except Exception:
+                pass
+
+atexit.register(kill_chrome_processes)
+
+
 NAME = get_env_var("email")
 PASS = get_env_var("heslo")
 
@@ -41,10 +57,9 @@ while (True):
         break
     else:
         print("Neplatna volba, zkus to znovu.")
-options.add_experimental_option("detach", False)
 options.add_argument("--no-sandbox")
-
-driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
+service = Service(ChromeDriverManager().install())
+driver = webdriver.Chrome(service=service, options=options)
 driver.get(URL)
 time.sleep(3)  # wait for page to load
 # --- Log in ---
@@ -168,3 +183,5 @@ except KeyboardInterrupt:
 finally:
     print("Closing driver...")
     driver.quit()
+    service.stop()
+    kill_chrome_processes()
