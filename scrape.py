@@ -61,7 +61,7 @@ options.add_argument("--no-sandbox")
 service = Service(ChromeDriverManager().install())
 driver = webdriver.Chrome(service=service, options=options)
 driver.get(URL)
-time.sleep(3)  # wait for page to load
+time.sleep(6)  # wait for page to load
 # --- Log in ---
 driver.execute_script(f"""
 console.log(window.location.pathname);
@@ -102,7 +102,7 @@ if (email && password && submit) {{
     }}, 800);
 }}
 """)
-time.sleep(1)
+time.sleep(5)
 # --- Inject MutationObserver on <ol> ---
 observer_js = """
 function sleep(ms) {{
