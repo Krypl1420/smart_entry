@@ -1,5 +1,3 @@
-import os
-from dotenv import load_dotenv, set_key
 import time
 from dataclasses import dataclass
 from selenium import webdriver
@@ -7,71 +5,22 @@ from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
 from webdriver_manager.chrome import ChromeDriverManager
 import time
-import dotenv
 import atexit
 import psutil
-# import ib_api
+from ui import get_env_var, clear_env_var
+from discord_js_scripts import OBSERVER_SCRIPT, LOGIN_SCRIPT
+from ib_api import initialize_ib
+from ib_async import IB, Index
 
 # IB = ib_api.initialize_ib()
 
 @dataclass
-class SmartMoney:
+class Candle:
     open: float
     high: float
     low: float
     close: float
-    volume: float = 0.0
-
-def get_env_var() -> str:
-    dotenv_path = "../.env"
-    load_dotenv(dotenv_path)
-    key = "DIS_TKN"
-
-    val = os.getenv(key)
-    if val:
-        return val
-    else:
-        val = input("Discord Bot Token nenalezen. Zadejte jej prosím: ")
-        set_key(dotenv_path, key, val)
-        return val
-
-def trade_range(range_high, range_low):
-    start_time = time.time()
-    while(True):
-        delta = time.time() - start_time
-        if delta > 60 * 5:  
-            break
-        # bars = ib_api.get_last_n_bars(IB,)
-        # current_price = bars['close'].iloc[-1]
-        # candles = ib_api.get_last_n_bars(IB, 'AAPL', 5, '1 min')
-        # if current_price >= range_high:
-        #     pass
-        #     #sell function
-        # elif current_price <= range_low:
-        #     pass
-            #buy function
-            
-
-
-
-# Discord chat URL
-def get_env_var(key: str) -> str:
-    dotenv_path = "../.env"
-    dotenv.load_dotenv(dotenv_path)
-
-    val = dotenv.get_key(dotenv_path, key)
-    if val:
-        return val
-    else:
-        val = input(f"{key} nenalezen. Zadejte jej prosím: ")
-        print("\n")
-        dotenv.set_key(dotenv_path, key, val)
-        return val
-def clear_env_var():
-    dotenv_path = "../.env"
-    dotenv.set_key(dotenv_path, "email", "")
-    dotenv.set_key(dotenv_path, "heslo", "")
-
+    volume: float = 0.0        
 
 def kill_chrome_processes():
     for proc in psutil.process_iter(['pid', 'name']):
@@ -86,9 +35,9 @@ def kill_chrome_processes():
 
 atexit.register(kill_chrome_processes)
 
-URL = "https://discord.com/channels/1427735994538659890/1427735994538659893"
-NAME = get_env_var("email")
-PASS = get_env_var("heslo")
+URL:str = "https://discord.com/channels/1427735994538659890/1427735994538659893"
+NAME:str = get_env_var("email")
+PASS:str = get_env_var("heslo")
 
 options = Options()
 while (True):
@@ -109,122 +58,47 @@ driver = webdriver.Chrome(service=service, options=options)
 driver.get(URL)
 time.sleep(6)  # wait for page to load
 # --- Log in ---
-driver.execute_script(f"""
-console.log(window.location.pathname);
-function sleep(ms) {{
-    return new Promise(resolve => setTimeout(resolve, ms));
-}}
-if (window.location.pathname === "/login" && document.readyState === "interactive") {{
-    console.log("On login page");
-}}else{{
-    console.log("Not on login page");
-    await sleep(5000);
-}}
-
-const email = document.querySelector('[autocomplete~="username"]');
-const password = document.querySelector('[autocomplete~="current-password"]');
-const submit = document.querySelector('button[type="submit"]');
-console.log(email, password, submit, "LOGIN ELEMENTS");
-
-if (email && password && submit) {{
-    function setNativeValue(element, value) {{
-        const valueSetter = Object.getOwnPropertyDescriptor(element.__proto__, 'value').set;
-        const prototype = Object.getPrototypeOf(element);
-        const prototypeValueSetter = Object.getOwnPropertyDescriptor(prototype, 'value').set;
-        if (valueSetter && valueSetter !== prototypeValueSetter) {{
-            prototypeValueSetter.call(element, value);
-        }} else {{
-            valueSetter.call(element, value);
-        }}
-        element.dispatchEvent(new Event('input', {{ bubbles: true }}));
-        element.dispatchEvent(new Event('change', {{ bubbles: true }}));
-    }}
-
-    setNativeValue(email, "{NAME}");
-    setNativeValue(password, "{PASS}");
-
-    setTimeout(() => {{
-        submit.click();
-    }}, 800);
-}}
-""")
+driver.execute_script(LOGIN_SCRIPT(NAME, PASS))
 time.sleep(5)
 # --- Inject MutationObserver on <ol> ---
-observer_js = """
-function sleep(ms) {{
-    return new Promise(resolve => setTimeout(resolve, ms));
-}}
-if(!window.location.pathname.includes("/channels/") || document.readyState !== "complete"){
-    await sleep(5000);
-}
-if (!window.__observerInjected) {
-    window.__observerInjected = true;
 
-    const target = document.querySelector('ol');
-    if (target) {
-        const observer = new MutationObserver(mutations => {
-            for (const mutation of mutations) {
-                for (const node of mutation.addedNodes) {
-
-                    if (
-                        node.tagName?.toLowerCase() === 'li' &&
-                        node.className === "messageListItem__5126c"
-                        ) {
-                        const spans = node.querySelectorAll('span');
-                        let mySpan;
-                        for (const span of spans) {
-                            if (span.parentElement.className.includes("messageContent")) {
-                                if (mySpan) {
-                                    window.__latestElement = {
-                                        text: "error: multiple spans"
-                                    }
-                                    console.log("ERROR: multiple messageContent spans found")
-                                }
-                                mySpan = span;
-                                break;
-                            }
-                        }
-                        if (mySpan) {
-                            console.log("New message detected:", mySpan.innerText);
-                            window.__latestElement = {
-                                text: mySpan.innerText,
-                                time: new Date().toLocaleString()
-                            }
-                        }else{
-                            window.__latestElement = {
-                                text: "error: no span found"
-                            }
-                            console.log("ERROR: no messageContent span found")
-                        }
-
-
-                    }
-
-                }
-            }
-        });
-        observer.observe(target, { childList: true, subtree: true });
-    }
-}
-"""
-driver.execute_script(observer_js)
+driver.execute_script(OBSERVER_SCRIPT)
 print("Observer injected, monitoring <ol>...")
 
-# --- Loop to fetch new element immediately when it appears ---
 last_time = None
-
+smart_entry_high:float
+smart_entry_low:float
+ib: IB = initialize_ib()
 try:
     while True:
         newest = driver.execute_script("return window.__latestElement || null;")
-        if newest and newest.get("time") != last_time:
-            if newest.get("text").startswith("error"):
-                raise Exception(newest.get("text"))
-            last_time = newest.get("time")
-            print("New message detected:")
-            print(newest.get("text"))
-            print("---")
-        time.sleep(0.05)  # small sleep to avoid CPU spike
+        if not newest:
+            time.sleep(0.05)
+            continue
+
+        text:str = newest.get("text")
+        timestamp:int = newest.get("time")
+
+        if timestamp == last_time:
+            time.sleep(0.05)
+            continue 
+        if text.startswith("error"):
+            raise Exception(text)
+
+        parts = text.split("|")
+        smart_entry_high, smart_entry_low = map(float, parts[6:8])
+
+        spx = Index('SPX', 'CBOE', 'USD')
+        ib.qualifyContracts(spx)
+        
+        # Request market data
+        ib.reqMktData(spx)
+
+        last_time = timestamp
+        time.sleep(0.05)
+
 except KeyboardInterrupt:
+    print(smart_entry_low, smart_entry_high)
     print("Stopped monitoring.")
 finally:
     print("Closing driver...")
