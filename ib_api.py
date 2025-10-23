@@ -1,5 +1,5 @@
 from ib_insync import *
-
+import asyncio
 
 def initialize_ib(host="127.0.0.1", port=7497, clientId=1) -> IB:
     """
@@ -33,21 +33,15 @@ def get_last_n_bars(ib: IB, contract, n=50, bar_size="1 min", what_to_show="TRAD
     df = util.df(bars)
     return df.tail(n)
 
-def get_live_spx_data(ib: IB):
+async def get_live_spx_data(ib: IB, symbol: str = "SPX", exchange: str = "CBOE", currency: str = "USD", delay: float = 0.1) -> float:
     """
-    Get live SPX data from IB.
-    
-    Args:
-        ib (IB): Connected IB instance.
-    
-    Returns:
-        Contract object with live data subscription
+    je potreba tradable symbol 
     """
-    spx = Index('SPX', 'CBOE', 'USD')
+    spx = Index(symbol, exchange, currency)
     ib.qualifyContracts(spx)
-    
-    # Request market data
     ib.reqMktData(spx)
-    ib.sleep(1)  # Give IB time to send initial data
+    await asyncio.sleep(delay)  # async-compatible wait
+    ticker = ib.ticker(spx)
+    current_price = ticker.last if ticker.last else ticker.close
+    return current_price
     
-    return spx

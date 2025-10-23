@@ -1,3 +1,9 @@
+"""
+1. aktualni price = last traded
+2. pro spx live je potreba subscription (spy)
+
+"""
+
 import time
 from dataclasses import dataclass
 from selenium import webdriver
@@ -9,18 +15,21 @@ import atexit
 import psutil
 from ui import get_env_var, clear_env_var
 from discord_js_scripts import OBSERVER_SCRIPT, LOGIN_SCRIPT
-from ib_api import initialize_ib
+from ib_api import initialize_ib, get_live_spx_data
 from ib_async import IB, Index
-
+import asyncio
 # IB = ib_api.initialize_ib()
 
 @dataclass
-class Candle:
-    open: float
-    high: float
-    low: float
-    close: float
-    volume: float = 0.0        
+class Tick:
+    price: float
+    timestamp: float
+
+def manage_ticks(prices:list[Tick], time_window:int = 900) -> list[Tick]:
+    current_time = time.time()
+    # Remove ticks older than time_window
+    prices = [tick for tick in prices if current_time - tick.timestamp <= time_window]
+    return prices
 
 def kill_chrome_processes():
     for proc in psutil.process_iter(['pid', 'name']):
@@ -69,6 +78,9 @@ last_time = None
 smart_entry_high:float
 smart_entry_low:float
 ib: IB = initialize_ib()
+last_price:float = 0.0
+prices: list[Tick] = []
+
 try:
     while True:
         newest = driver.execute_script("return window.__latestElement || null;")
@@ -88,11 +100,11 @@ try:
         parts = text.split("|")
         smart_entry_high, smart_entry_low = map(float, parts[6:8])
 
-        spx = Index('SPX', 'CBOE', 'USD')
-        ib.qualifyContracts(spx)
-        
-        # Request market data
-        ib.reqMktData(spx)
+        current_price = asyncio.run(get_live_spx_data(ib))
+        if current_price != last_price:
+            manage_ticks(prices)
+            prices.append(Tick(price=current_price, timestamp=time.time()))
+        print(f"SPX Current: {current_price:.2f}, Smart Entry High: {smart_entry_high:.2f}, Low: {smart_entry_low:.2f}")
 
         last_time = timestamp
         time.sleep(0.05)
