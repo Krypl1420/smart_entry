@@ -1,5 +1,6 @@
+from typing import Callable
 
-LOGIN_SCRIPT = lambda NAME, PASS: f"""
+LOGIN_SCRIPT:Callable[[str,str], str] = lambda NAME, PASS: f"""
 console.log(window.location.pathname);
 function sleep(ms) {{
     return new Promise(resolve => setTimeout(resolve, ms));
