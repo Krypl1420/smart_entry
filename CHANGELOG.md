@@ -1,5 +1,4 @@
 ### Added
-- Live data refresh support
-
-### Fixed
-- Price rounding error on trade confirmation
+- new chart class
+### Changes
+- discord in invididual file
