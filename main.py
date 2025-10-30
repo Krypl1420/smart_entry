@@ -5,20 +5,17 @@
 """
 
 import time
-import datetime
+from datetime import datetime, timezone
 from dataclasses import dataclass
 import time
 import asyncio
 from chart import LiveChart
 from discord_api import DiscordFeeder 
-# from ib_api import initialize_ib, get_live_spx_data
-# from ib_async import IB, Index
+from ib_api import initialize_ib, get_live_spx_data, Tick
+from ib_async import IB
 # IB = ib_api.initialize_ib()
 
-@dataclass
-class Tick:
-    price: float
-    timestamp: float
+
 
 def manage_ticks(prices:list[Tick], time_window:int = 900) -> list[Tick]:
     current_time = time.time()
@@ -28,13 +25,13 @@ def manage_ticks(prices:list[Tick], time_window:int = 900) -> list[Tick]:
 
 smart_entry_high:float
 smart_entry_low:float
-# ib: IB = initialize_ib()
-last_price:float = 0.0
+ib: IB = initialize_ib()
+last_tick:Tick = Tick(price=0.0, timestamp=0.0)
 prices: list[Tick] = []
 
 
 d:DiscordFeeder = DiscordFeeder()
-
+chart: LiveChart = LiveChart(title="Smart entry", xlabel="Time", ylabel="Price")
 try:
     while True:
         high, low = d.get_smart_entries()
@@ -42,13 +39,14 @@ try:
             smart_entry_high = high
             smart_entry_low = low
             print(f"Smart Entry High: {smart_entry_high:.2f}, Low: {smart_entry_low:.2f}")
-        # current_price = asyncio.run(get_live_spx_data(ib))
-        # if current_price != last_price:
-        #     manage_ticks(prices)
-        #     prices.append(Tick(price=current_price, timestamp=datetime.time()))
-        #     if len(prices) > 50:
-        #         prices.pop(0)
-        # print(f"SPX Current: {current_price:.2f}, Smart Entry High: {smart_entry_high:.2f}, Low: {smart_entry_low:.2f}")
+        current_tick = asyncio.run(get_live_spx_data(ib))
+        if current_tick != last_tick:
+            manage_ticks(prices)
+            prices.append(Tick(price=current_tick, ))
+            if len(prices) > 50:
+                prices.pop(0)
+        print(f"SPX Current: {current_tick:.2f}, Smart Entry High: {smart_entry_high:.2f}, Low: {smart_entry_low:.2f}")
+        chart.update()
         time.sleep(0.05)
 
 except KeyboardInterrupt:

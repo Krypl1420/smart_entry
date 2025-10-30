@@ -1,53 +1,37 @@
-if (!window.__observerInjected) {
-    window.__observerInjected = true;
+console.log(window.location.pathname);
+function sleep(ms) {{
+    return new Promise(resolve => setTimeout(resolve, ms));
+}}
+if (window.location.pathname === "/login" && document.readyState === "interactive") {{
+    console.log("On login page");
+}}else{{
+    console.log("Not on login page");
+    await sleep(5000);
+}}
 
-    const target = document.querySelector('ol');
-    if (target) {
-        const observer = new MutationObserver(mutations => {
-            for (const mutation of mutations) {
-                for (const node of mutation.addedNodes) {
+const email = document.querySelector('[autocomplete~="username"]');
+const password = document.querySelector('[autocomplete~="current-password"]');
+const submit = document.querySelector('button[type="submit"]');
+console.log(email, password, submit, "LOGIN ELEMENTS");
 
-                    if (
-                        node.tagName?.toLowerCase() === 'li' &&
-                        node.className === "messageListItem__5126c"
-                        ) {
-                        const spans = node.querySelectorAll('span');
-                        let mySpan;
-                        for (const span of spans) {
-                            if (span.parentElement.className.includes("messageContent")) {
-                                if (mySpan) {
-                                    window.__latestElement = {
-                                        text: "error: multiple spans"
-                                    }
-                                    console.log("ERROR: multiple messageContent spans found")
-                                }
-                                mySpan = span;
-                                break;
-                            }
-                        }
-                        if (mySpan) {
+if (email && password && submit) {{
+    function setNativeValue(element, value) {{
+        const valueSetter = Object.getOwnPropertyDescriptor(element.__proto__, 'value').set;
+        const prototype = Object.getPrototypeOf(element);
+        const prototypeValueSetter = Object.getOwnPropertyDescriptor(prototype, 'value').set;
+        if (valueSetter && valueSetter !== prototypeValueSetter) {{
+            prototypeValueSetter.call(element, value);
+        }} else {{
+            valueSetter.call(element, value);
+        }}
+        element.dispatchEvent(new Event('input', {{ bubbles: true }}));
+        element.dispatchEvent(new Event('change', {{ bubbles: true }}));
+    }}
 
-                            window.__latestElement = {
-                                text: mySpan.innerText,
-                                time: new Date().toLocaleString()
-                            }
-                        }else{
-                            window.__latestElement = {
-                                text: "error: no span found"
-                            }
-                            console.log("ERROR: no messageContent span found")
-                        }
+    setNativeValue(email, "{NAME}");
+    setNativeValue(password, "{PASS}");
 
-
-                    }
-
-                }
-            }
-        });
-        observer.observe(target, { childList: true, subtree: true });
-        while (true) {
-            console.log(window.__latestElement.text??"No new element yet");
-            await new Promise(r => setTimeout(r, 100));
-        }
-    }
-}
+    setTimeout(() => {{
+        submit.click();
+    }}, 800);
+}}

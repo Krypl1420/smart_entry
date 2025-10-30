@@ -39,11 +39,9 @@ class DiscordFeeder:
         service = Service(ChromeDriverManager().install())
         self.driver = webdriver.Chrome(service=service, options=options)
         self.driver.get(URL)
-        time.sleep(6)  # wait for page to load
-        # --- Log in ---
+        time.sleep(6)
         self.driver.execute_script(LOGIN_SCRIPT(NAME, PASS))
         time.sleep(5)
-        # --- Inject MutationObserver on <ol> ---
 
         self.driver.execute_script(OBSERVER_SCRIPT)
         print("Observer injected, monitoring <ol>...")

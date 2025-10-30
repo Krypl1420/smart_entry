@@ -1,5 +1,14 @@
-from ib_insync import *
+from datetime import datetime, timezone
+from ib_async import IB, Index, util, Ticker 
 import asyncio
+from dataclasses import dataclass
+import time
+
+
+@dataclass
+class Tick:
+    price: float
+    timestamp: datetime
 
 def initialize_ib(host="127.0.0.1", port=7497, clientId=1) -> IB:
     """
@@ -33,15 +42,40 @@ def get_last_n_bars(ib: IB, contract, n=50, bar_size="1 min", what_to_show="TRAD
     df = util.df(bars)
     return df.tail(n)
 
-async def get_live_spx_data(ib: IB, symbol: str = "SPX", exchange: str = "CBOE", currency: str = "USD", delay: float = 0.1) -> float:
+async def get_live_spx_data(
+    ib: IB,
+    symbol: str = "SPY",
+    exchange: str = "CBOE",
+    currency: str = "USD",
+    delay: float = 0.1
+) -> Tick:
     """
-    je potreba tradable symbol 
+    Fetch live SPX data with reliable timestamping.
+    Prioritizes exchange-provided timestamp, falls back to system UTC time.
     """
-    spx = Index(symbol, exchange, currency)
-    ib.qualifyContracts(spx)
-    ib.reqMktData(spx)
-    await asyncio.sleep(delay)  # async-compatible wait
-    ticker = ib.ticker(spx)
-    current_price = ticker.last if ticker.last else ticker.close
-    return current_price
-    
+    spy = Index(symbol, exchange, currency)
+    ib.qualifyContracts(spy)
+    ib.reqMktData(spy)
+
+    await asyncio.sleep(delay)  # allow IB to stream data
+
+    ticker: Ticker = ib.ticker(spy)
+    price = ticker.last or ticker.close or None
+
+    if price is None:
+        raise ValueError("No valid price data received")
+
+    # Prefer exchange timestamp if available
+    if not ticker.time:
+        timestamp = datetime.now(timezone.utc)
+
+    return Tick(price=price, timestamp=timestamp)
+
+if __name__ == "__main__":
+    ib = initialize_ib()
+    try:
+        while True:
+            print(get_live_spx_data(ib))
+            time.sleep(1)
+    except KeyboardInterrupt:
+        print("Exiting...")
