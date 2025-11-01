@@ -7,7 +7,7 @@ import time
 import atexit
 import psutil
 from ui import get_env_var, clear_env_var
-from discord_js_scripts import OBSERVER_SCRIPT, LOGIN_SCRIPT
+from discord_js_scripts import OBSERVER_SCRIPT
 import os
 class DiscordFeeder:
     def __init__(self):
