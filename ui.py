@@ -7,7 +7,7 @@ def get_env_var(key: str) -> str:
     if val:
         return val
     else:
-        val = input(f"{key} nenalezen. Zadejte jej prosím: ")
+        val = input(f"{key} nenalezen. Zadejte jej prosím: ").replace("\\","\\\\")
         print("\n")
         dotenv.set_key(dotenv_path, key, val)
         return val

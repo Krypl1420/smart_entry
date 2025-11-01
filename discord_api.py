@@ -8,7 +8,7 @@ import atexit
 import psutil
 from ui import get_env_var, clear_env_var
 from discord_js_scripts import OBSERVER_SCRIPT, LOGIN_SCRIPT
-
+import os
 class DiscordFeeder:
     def __init__(self):
         self.last_time = None
@@ -16,11 +16,10 @@ class DiscordFeeder:
 
 
         atexit.register(self.kill_chrome_processes)
-        print(self.kill_chrome_processes)
-
         URL:str = get_env_var("chat_url")
-        NAME:str = get_env_var("email")
-        PASS:str = get_env_var("heslo")
+        ACCOUNT_PATH = get_env_var("account_path").replace("\\", "/")
+
+        os.makedirs(ACCOUNT_PATH, exist_ok=True)
 
         options = Options()
         while (True):
@@ -35,13 +34,12 @@ class DiscordFeeder:
                 break
             else:
                 print("Neplatna volba, zkus to znovu.")
+        options.add_argument(f"--user-data-dir={ACCOUNT_PATH}")
         options.add_argument("--no-sandbox")
         service = Service(ChromeDriverManager().install())
         self.driver = webdriver.Chrome(service=service, options=options)
         self.driver.get(URL)
         time.sleep(6)
-        self.driver.execute_script(LOGIN_SCRIPT(NAME, PASS))
-        time.sleep(5)
 
         self.driver.execute_script(OBSERVER_SCRIPT)
         print("Observer injected, monitoring <ol>...")
@@ -49,6 +47,8 @@ class DiscordFeeder:
         self.last_time = None
 
     def get_smart_entries(self):
+        """
+        returns new smart entries high, low or None, None"""
         newest = self.driver.execute_script("return window.__latestElement || null;")
         if not newest:
             return None, None
@@ -67,6 +67,16 @@ class DiscordFeeder:
         smart_entry_high, smart_entry_low = map(float, parts[6:8])
         self.last_time = js_timestamp
         return smart_entry_high, smart_entry_low
+    
+    def get_first_smart_entries(self):
+        start_time = time.time()
+        while True:
+            high, low = self.get_smart_entries()
+            if high and low:
+                return high, low
+            if time.time() - start_time > 300:
+                raise TimeoutError("Timed out waiting for smart entries.")
+            time.sleep(1)
     
     @staticmethod
     def kill_chrome_processes():

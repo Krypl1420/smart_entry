@@ -3,12 +3,18 @@ from ib_async import IB, Index, util, Ticker
 import asyncio
 from dataclasses import dataclass
 import time
+from zoneinfo import ZoneInfo
+
 
 
 @dataclass
 class Tick:
-    price: float
     timestamp: datetime
+    price: float
+
+def get_cboe_datetime() -> datetime:
+    """Return the current datetime in Cboe (Chicago) timezone."""
+    return datetime.now(ZoneInfo("America/Chicago"))
 
 def initialize_ib(host="127.0.0.1", port=7497, clientId=1) -> IB:
     """
@@ -67,9 +73,11 @@ async def get_live_spx_data(
 
     # Prefer exchange timestamp if available
     if not ticker.time:
-        timestamp = datetime.now(timezone.utc)
+        print("Warning: No exchange timestamp, using system UTC time.")
+        timestamp = get_cboe_datetime()
 
     return Tick(price=price, timestamp=timestamp)
+
 
 if __name__ == "__main__":
     ib = initialize_ib()
