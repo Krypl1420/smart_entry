@@ -5,6 +5,7 @@ from typing import List
 from dataclasses import dataclass
 from ib_api import Tick
 import time
+import asyncio
 @dataclass
 class PriceData():
     timestamp: List[datetime]
@@ -60,6 +61,11 @@ class LiveChart:
             self.delta_time = time.time()
         self.ax.relim()
         self.ax.autoscale_view()
+        self.fig.canvas.draw_idle()
+        self.fig.canvas.flush_events()
+        plt.pause(pause_time)
+    
+    def chart_pause(self, pause_time=0.01):
         self.fig.canvas.draw_idle()
         self.fig.canvas.flush_events()
         plt.pause(pause_time)

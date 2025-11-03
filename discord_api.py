@@ -9,6 +9,7 @@ import psutil
 from ui import get_env_var, clear_env_var
 from discord_js_scripts import OBSERVER_SCRIPT
 import os
+import asyncio
 class DiscordFeeder:
     def __init__(self):
         self.last_time = None
@@ -48,16 +49,16 @@ class DiscordFeeder:
 
     def get_smart_entries(self):
         """
-        returns new smart entries high, low or None, None"""
+        returns new smart entries high, low or 0, 0"""
         newest = self.driver.execute_script("return window.__latestElement || null;")
         if not newest:
-            return None, None
+            return 0, 0
 
         text:str = newest.get("text")
         js_timestamp:str = newest.get("time")
 
         if js_timestamp == self.last_time:
-            return None, None
+            return 0, 0
         if text.startswith("error"):
             # JS returned an error
             self.kill_chrome_processes()
@@ -68,15 +69,27 @@ class DiscordFeeder:
         self.last_time = js_timestamp
         return smart_entry_high, smart_entry_low
     
-    def get_first_smart_entries(self):
-        start_time = time.time()
-        while True:
-            high, low = self.get_smart_entries()
-            if high and low:
-                return high, low
-            if time.time() - start_time > 300:
-                raise TimeoutError("Timed out waiting for smart entries.")
-            time.sleep(1)
+    async def get_smart_entries_async(self):
+        newest = self.driver.execute_script("return window.__latestElement || null;")
+        if not newest:
+            return 0, 0
+
+        text:str = newest.get("text")
+        js_timestamp:str = newest.get("time")
+
+        if js_timestamp == self.last_time:
+            return 0, 0
+        if text.startswith("error"):
+            # JS returned an error
+            self.kill_chrome_processes()
+            raise Exception(text)
+
+        parts = text.split("|")
+        smart_entry_high, smart_entry_low = map(float, parts[6:8])
+        self.last_time = js_timestamp
+        return smart_entry_high, smart_entry_low
+    
+
     
     @staticmethod
     def kill_chrome_processes():
