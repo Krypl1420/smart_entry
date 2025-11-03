@@ -27,7 +27,7 @@ async def main():
     smart_entry_high: float = 0.0
     smart_entry_low: float = 0.0
     ib: IB = initialize_ib()
-    last_tick: Tick = None
+    last_tick: Tick = Tick(get_cboe_datetime(),6600.0)
 
     prices: PriceData = PriceData(timestamp=[], smart_entry_high=[], smart_entry_low=[], price=[])
     d: DiscordFeeder = DiscordFeeder()
@@ -35,13 +35,15 @@ async def main():
 
     try:
         while True:
-            # Run Discord and IB data fetching concurrently
             high_low, new_tick = await asyncio.gather(
-                d.get_smart_entries_async(),  # You'll need to add this method to DiscordFeeder
+                d.get_smart_entries_async(),  
                 get_live_spx_data(ib)
+
             )
             
-            high, low = high_low if high_low else (None, None)
+            high, low = high_low
+            if high == 0 and low == 0:
+                high, low = None, None
             new_smart_data: bool = high and low
             new_price_data: bool = new_tick != last_tick
 
@@ -62,13 +64,18 @@ async def main():
                 
             manage_price_data(prices)
             last_tick = new_tick
+            chart.chart_pause()
             await asyncio.sleep(0.05)
 
-    except KeyboardInterrupt:
-        print(f"Smart Entry Levels - Low: {smart_entry_low}, High: {smart_entry_high}")
-        print("Stopped monitoring.")
+    except (KeyboardInterrupt, asyncio.CancelledError):
+        # 🔹 Cancel all other running tasks except this one
+        tasks = [t for t in asyncio.all_tasks() if t is not asyncio.current_task()]
+        for t in tasks:
+            t.cancel()
+        await asyncio.gather(*tasks, return_exceptions=True)
+
     finally:
         print("Cleaning up...")
-        await ib.disconnect()
         d.kill_chrome_processes()
 
+asyncio.run(main())
