@@ -78,12 +78,17 @@ async def get_live_spx_data(
 
     return Tick(price=price, timestamp=timestamp)
 
-
 if __name__ == "__main__":
-    ib = initialize_ib()
-    try:
-        while True:
-            print(get_live_spx_data(ib))
-            time.sleep(1)
-    except KeyboardInterrupt:
-        print("Exiting...")
+    async def test_loop():
+        ib = initialize_ib()
+        try:
+            while True:
+                tick = await get_live_spx_data(ib)
+                print(f"Time: {tick.timestamp}, Price: {tick.price}")
+                await asyncio.sleep(1)
+        except KeyboardInterrupt:
+            print("Exiting...")
+        finally:
+            await ib.disconnect()
+
+    asyncio.run(test_loop())
