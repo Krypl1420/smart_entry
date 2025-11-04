@@ -4,7 +4,6 @@
 
 """
 import random
-import time
 import asyncio
 from chart import LiveChart, PriceData
 from discord_api import DiscordFeeder 
@@ -35,8 +34,8 @@ async def ib_data_sim(last_tick: Tick) -> Tick:
     return last_tick
 
 async def main():
-    smart_entry_high: float = 0.0
-    smart_entry_low: float = 0.0
+    smart_entry_high: float = 0.0#use
+    smart_entry_low: float = 0.0#less
     # ib: IB = initialize_ib()
     last_tick: Tick = Tick(get_cboe_datetime(),6600.0)
 
@@ -46,9 +45,8 @@ async def main():
 
     try:
         while True:
-            # Run Discord and IB data fetching concurrently
             high_low, new_tick = await asyncio.gather(
-                d.get_smart_entries_async(),  # You'll need to add this method to DiscordFeeder
+                d.get_smart_entries_async(), 
                 ib_data_sim(last_tick)
                 # get_live_spx_data(ib)
 

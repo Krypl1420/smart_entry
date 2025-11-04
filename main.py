@@ -3,7 +3,6 @@
 2. pro spx live je potreba subscription (spy)
 
 """
-import time
 import asyncio
 from chart import LiveChart, PriceData
 from discord_api import DiscordFeeder 
@@ -24,8 +23,8 @@ def manage_price_data(prices: PriceData, time_window:int = 900) -> list[PriceDat
             continue
 
 async def main():
-    smart_entry_high: float = 0.0
-    smart_entry_low: float = 0.0
+    smart_entry_high: float = 0.0#use
+    smart_entry_low: float = 0.0#less
     ib: IB = initialize_ib()
     last_tick: Tick = Tick(get_cboe_datetime(),6600.0)
 
