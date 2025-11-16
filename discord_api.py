@@ -9,7 +9,6 @@ import psutil
 from ui import get_env_var, clear_env_var
 from discord_js_scripts import OBSERVER_SCRIPT
 import os
-import asyncio
 class DiscordFeeder:
     def __init__(self):
         self.last_time = None

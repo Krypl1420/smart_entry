@@ -1,12 +1,12 @@
-from datetime import datetime, timezone
-from ib_async import IB, Index, util, Ticker 
+from datetime import datetime
+from ib_async import IB, Index, util, Ticker, Stock, Contract, Order, Future, ticker, MarketOrder, Trade
 import asyncio
 from dataclasses import dataclass
-import time
 from zoneinfo import ZoneInfo
-
-
-
+from typing import Literal
+import time
+import math
+from random import randint
 @dataclass
 class Tick:
     timestamp: datetime
@@ -16,79 +16,66 @@ def get_cboe_datetime() -> datetime:
     """Return the current datetime in Cboe (Chicago) timezone."""
     return datetime.now(ZoneInfo("America/Chicago"))
 
-def initialize_ib(host="127.0.0.1", port=7497, clientId=1) -> IB:
-    """
-    Connect to Interactive Brokers TWS or Gateway and return IB instance.
+class IBClient:
+    def __init__(self):
+        self.ib = IB()
+        self.sp_contract =  None
+        self.testprice:float = 6700.0
+
+    async def connect(self, host="127.0.0.1", port=7497, clientId=1) -> None:
+        await self.ib.connectAsync(host, port, clientId=clientId)
+        template = Future(
+        symbol="MES",
+        exchange="CME",
+        currency="USD"
+        )
+        details = await self.ib.reqContractDetailsAsync(template)
+        # details are sorted from nearest expiry to furthest
+        self.sp_contract = details[0].contract
+        
+
+    async def get_latest_tick_mes(self, timeout=5.0) -> Tick:
+        # ticker: Ticker = self.ib.reqMktData(self.sp_contract, '', False, False)
+        ticker: Ticker = Ticker(self.sp_contract)
+        ticker.last = self.testprice +randint(-20,20)
+        self.testprice = ticker.last
+        ticker.time = get_cboe_datetime()
+        start = time.time()
+        while math.isnan(ticker.last):
+            if time.time() - start > timeout:
+                raise TimeoutError("No tick received within timeout")
+            await asyncio.sleep(0.01) 
+
+        return Tick(ticker.time, ticker.last)
     
-    Args:
-        host (str): TWS/Gateway host (usually 127.0.0.1).
-        port (int): Port (default 7497 for TWS, 4002 for Gateway).
-        clientId (int): Unique client ID for this session.
-    
-    Returns:
-        IB: Connected IB instance.
-    """
-    ib = IB()
-    ib.connect(host, port, clientId=clientId)
-    return ib
+    async def trade_mes(self, action: Literal["BUY", "SELL"], quantity: int) -> Trade:
+        """
+        Place a market order for ES/MES futures.
 
-def get_last_n_bars(ib: IB, contract, n=50, bar_size="1 min", what_to_show="TRADES", useRTH=True):
-    """
-    Fetch last n bars for a given contract from IB.
-    """
-    bars = ib.reqHistoricalData(
-        contract,
-        endDateTime='',
-        durationStr="1 D",          # always fetch 1 day, safe for intraday
-        barSizeSetting=bar_size,
-        whatToShow=what_to_show,
-        useRTH=useRTH,
-        formatDate=1
-    )
-    df = util.df(bars)
-    return df.tail(n)
+        Parameters:
+            ib: IB() instance
+            action: 'BUY' or 'SELL'
+            qty: number of contracts
+        """
+        contract = self.sp_contract
+        await self.ib.qualifyContractsAsync(contract)  # ensure IB knows the contract
 
-async def get_live_spx_data(
-    ib: IB,
-    symbol: str = "SPY",
-    exchange: str = "CBOE",
-    currency: str = "USD",
-    delay: float = 0.1
-) -> Tick:
-    """
-    Fetch live SPX data with reliable timestamping.
-    Prioritizes exchange-provided timestamp, falls back to system UTC time.
-    """
-    spy = Index(symbol, exchange, currency)
-    ib.qualifyContracts(spy)
-    ib.reqMktData(spy)
+        order = MarketOrder(action, quantity)
+        trade = self.ib.placeOrder(contract, order)
+        return trade
+        
+    async def disconnect(self):
+        if self.ib and self.ib.isConnected():
+            self.ib.disconnect()
 
-    await asyncio.sleep(delay)  # allow IB to stream data
-
-    ticker: Ticker = ib.ticker(spy)
-    price = ticker.last or ticker.close or None
-
-    if price is None:
-        raise ValueError("No valid price data received")
-
-    # Prefer exchange timestamp if available
-    if not ticker.time:
-        print("Warning: No exchange timestamp, using system UTC time.")
-        timestamp = get_cboe_datetime()
-
-    return Tick(price=price, timestamp=timestamp)
+async def test_loop():
+    client = IBClient()
+    await client.connect()
+    try:
+        await client.trade_mes("BUY", 100)
+    finally:
+        pass
+        # await client.disconnect()
 
 if __name__ == "__main__":
-    async def test_loop():
-        ib = initialize_ib()
-        try:
-            while True:
-                tick = await get_live_spx_data(ib)
-                print(f"Time: {tick.timestamp}, Price: {tick.price}")
-                await asyncio.sleep(1)
-        except KeyboardInterrupt:
-            print("Exiting...")
-        finally:
-            await ib.disconnect()
-
     asyncio.run(test_loop())
