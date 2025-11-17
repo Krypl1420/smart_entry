@@ -1,19 +1,20 @@
 from datetime import datetime
-from ib_async import IB, Index, util, Ticker, Stock, Contract, Order, Future, ticker, MarketOrder, Trade
+from ib_async import IB, Ticker, Future, MarketOrder, Trade
 import asyncio
 from dataclasses import dataclass
+from zoneinfo import ZoneInfo
 from typing import Literal
 import time
 import math
-from random import randint
+# from random import randint
 @dataclass
 class Tick:
     timestamp: datetime
     price: float
 
-# def get_cboe_datetime() -> datetime:
-#     """Return the current datetime in Cboe (Chicago) timezone."""
-#     return datetime.now(ZoneInfo("America/Chicago"))
+def get_cboe_datetime() -> datetime:
+    """Return the current datetime in Cboe (Chicago) timezone."""
+    return datetime.now(ZoneInfo("America/Chicago"))
 
 class IBClient:
     def __init__(self):
