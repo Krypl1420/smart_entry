@@ -11,7 +11,7 @@ def get_folder_dir() -> str:
     root.attributes("-topmost", True)
 
     folder_path = filedialog.askdirectory(
-        title="Vyber složku"
+        title="Vytvoř a vyber složku"
     )
 
     if folder_path == "":
@@ -34,7 +34,7 @@ def get_env_var(key: str) -> str:
     else:
         val = input(f"{key} nenalezen. Zadejte jej prosím: ").replace("\\","\\\\")
         print("\n")
-        dotenv.set_key(dotenv_path, key, val)
+    dotenv.set_key(dotenv_path, key, val)
     return val
 def clear_env_var():
     dotenv_path = "../.env"

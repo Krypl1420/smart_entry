@@ -1,1 +1,22 @@
-pip install dotenv asyncio selenium ib_async matplotlib
+pip install dotenv asyncio selenium ib_async matplotlib webdriver_manager psutil
+
+nuitka main.py --standalone --onefile --follow-imports --enable-plugin=tk-inter --include-package=webdriver_manager --include-package=psutil --include-package=dotenv --include-package=matplotlib
+
+nuitka main.py --standalone --follow-imports --enable-plugin=tk-inter --include-package=webdriver_manager --include-package=psutil --include-package=dotenv --include-package=matplotlib
+
+import atexit
+import psutil
+import asyncio
+from dataclasses import dataclass
+from zoneinfo import ZoneInfo
+from typing import Literal
+import time
+import math
+from random import randint
+import dotenv
+import matplotlib.pyplot as plt
+from matplotlib.dates import DateFormatter
+from datetime import datetime
+from typing import List
+from dataclasses import dataclass
+import time

@@ -2,7 +2,6 @@ from datetime import datetime
 from ib_async import IB, Index, util, Ticker, Stock, Contract, Order, Future, ticker, MarketOrder, Trade
 import asyncio
 from dataclasses import dataclass
-from zoneinfo import ZoneInfo
 from typing import Literal
 import time
 import math
@@ -12,9 +11,9 @@ class Tick:
     timestamp: datetime
     price: float
 
-def get_cboe_datetime() -> datetime:
-    """Return the current datetime in Cboe (Chicago) timezone."""
-    return datetime.now(ZoneInfo("America/Chicago"))
+# def get_cboe_datetime() -> datetime:
+#     """Return the current datetime in Cboe (Chicago) timezone."""
+#     return datetime.now(ZoneInfo("America/Chicago"))
 
 class IBClient:
     def __init__(self):
@@ -35,11 +34,11 @@ class IBClient:
         
 
     async def get_latest_tick_mes(self, timeout=5.0) -> Tick:
-        # ticker: Ticker = self.ib.reqMktData(self.sp_contract, '', False, False)
-        ticker: Ticker = Ticker(self.sp_contract)
-        ticker.last = self.testprice +randint(-20,20)
-        self.testprice = ticker.last
-        ticker.time = get_cboe_datetime()
+        ticker: Ticker = self.ib.reqMktData(self.sp_contract, '', False, False)
+        # ticker: Ticker = Ticker(self.sp_contract)
+        # ticker.last = self.testprice +randint(-20,20)
+        # self.testprice = ticker.last
+        # ticker.time = get_cboe_datetime()
         start = time.time()
         while math.isnan(ticker.last):
             if time.time() - start > timeout:

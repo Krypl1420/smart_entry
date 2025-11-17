@@ -3,9 +3,7 @@ from matplotlib.dates import DateFormatter
 from datetime import datetime
 from typing import List
 from dataclasses import dataclass
-from ib_api import Tick
 import time
-import asyncio
 @dataclass
 class PriceData():
     timestamp: List[datetime]
