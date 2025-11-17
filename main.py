@@ -7,7 +7,6 @@ import asyncio
 from chart import LiveChart, PriceData
 from discord_api import DiscordFeeder 
 from ib_api import Tick, IBClient
-from typing import List
 from ui import Loading
 
 def manage_price_data(prices: PriceData, time_window:int = 900) -> list[PriceData]:

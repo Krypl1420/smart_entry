@@ -3,7 +3,6 @@ from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
 from webdriver_manager.chrome import ChromeDriverManager
-import time
 import atexit
 import psutil
 from ui import get_env_var, clear_env_var
@@ -16,8 +15,8 @@ class DiscordFeeder:
 
 
         atexit.register(self.kill_chrome_processes)
-        URL:str = get_env_var("chat_url")
-        ACCOUNT_PATH = get_env_var("account_path").replace("\\", "/")
+        URL:str = get_env_var("Url_discord_serveru")
+        ACCOUNT_PATH = get_env_var("Cesta_slozky").replace("\\", "/")
 
         os.makedirs(ACCOUNT_PATH, exist_ok=True)
 
