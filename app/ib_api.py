@@ -6,7 +6,6 @@ from zoneinfo import ZoneInfo
 from typing import Literal
 import time
 import math
-# from random import randint
 @dataclass
 class Tick:
     timestamp: datetime
@@ -30,7 +29,6 @@ class IBClient:
         currency="USD"
         )
         details = await self.ib.reqContractDetailsAsync(template)
-        # details are sorted from nearest expiry to furthest
         self.sp_contract = details[0].contract
         
 
