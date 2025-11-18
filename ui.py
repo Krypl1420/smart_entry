@@ -55,4 +55,4 @@ class Loading:
         if message is None:
             message = self.message
         print(message)
-    
+
