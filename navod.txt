@@ -1,4 +1,3 @@
-
 1) zapni workstation
 2) klikni na start.bat
 3) (jen první spuštění) zadej url discord serveru
