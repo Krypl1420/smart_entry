@@ -22,8 +22,11 @@ class IBClient:
         self.sp_contract =  None
         self.testprice:float = 6700.0
 
-    async def connect(self, host="127.0.0.1", port=7497, clientId=1) -> None:
+    async def connect(self, host="127.0.0.1", port=7497, clientId=2) -> None:
+        self.ib.RequestTimeout = 10  # Increase timeout to 30 seconds
         await self.ib.connectAsync(host, port, clientId=clientId)
+        if not self.ib.isConnected():
+            raise ConnectionRefusedError("Could not connect to IB Gateway/TWS")
         template = Future(
         symbol="MES",
         exchange="CME",
@@ -35,6 +38,8 @@ class IBClient:
         
 
     async def get_latest_tick_mes(self, timeout=5.0) -> Tick:
+        if not self.ib.isConnected():
+            raise ConnectionError("Not connected to IB")
         ticker: Ticker = self.ib.reqMktData(self.sp_contract, '', False, False)
         # ticker: Ticker = Ticker(self.sp_contract)
         # ticker.last = self.testprice +randint(-20,20)
@@ -57,11 +62,14 @@ class IBClient:
             action: 'BUY' or 'SELL'
             qty: number of contracts
         """
+        if not self.ib.isConnected():
+            raise ConnectionError("Not connected to IB")
         contract = self.sp_contract
         await self.ib.qualifyContractsAsync(contract)  # ensure IB knows the contract
 
         order = MarketOrder(action, quantity)
         trade = self.ib.placeOrder(contract, order)
+        print(f"Order placed: {action} {quantity} MES at market price.")
         return trade
         
     async def disconnect(self):

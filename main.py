@@ -37,11 +37,13 @@ async def manage_orders(price:PriceData, ib:IBClient, quantity: int = 1) -> None
 async def main():
     ib: IBClient = IBClient()
     try:
+        print("Připojuji se k IB...")
         await ib.connect()
+        print("Připojeno.")
     except ConnectionRefusedError:
         print('Nepodařilo se pripojit, ujisti se ze je zapnuta TWS a v nastavení api je zaskrtnuto "enable activeX and socket client" a vypnut "read only api"')
         exit()
-        
+      
     
     last_tick: Tick = Tick(None,None)
 
@@ -52,6 +54,7 @@ async def main():
     loading = Loading("Čekám na smart entry data: ")
     trade_since_new_data:bool = False
     try:
+
         while True:
             high_low, new_tick = await asyncio.gather(
                 d.get_smart_entries_async(),  

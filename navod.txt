@@ -1,7 +1,7 @@
 pip install dotenv asyncio selenium ib_async matplotlib webdriver_manager psutil
 
 1) zapni workstation
-2) pro zapnuti programu otevři powershell a napiš příkaz: pyhton -u *cela\cesta\složky*\main.py <- bez hvezdicek
+2) klikni na start.bat
 3) (jen první spuštění) zadej url discord serveru
 4) (jen první spuštění) vytvoř novou složku kam se uloží heslo a discord účet
 5) první spuštění: napiš do powershellu 2 a přihlas se na discord.  všechny další: napiš 2 a enter
