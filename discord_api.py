@@ -70,13 +70,13 @@ class DiscordFeeder:
     async def get_smart_entries_async(self):
         newest = self.driver.execute_script("return window.__latestElement || null;")
         if not newest:
-            return 0, 0
+            return None, None
 
         text:str = newest.get("text")
         js_timestamp:str = newest.get("time")
 
         if js_timestamp == self.last_time:
-            return 0, 0
+            return None, None
         if text.startswith("error"):
             # JS returned an error
             self.kill_chrome_processes()

@@ -7,13 +7,20 @@ import time
 @dataclass
 class PriceData():
     timestamp: List[datetime]
-    smart_entry_high: List[float]
-    smart_entry_low: List[float]
+    smart_entry_high: List[float|None]
+    smart_entry_low: List[float|None]
     price: List[float]
+
+    def append(self, ts:datetime, high:float|None, low:float|None, price:float) -> None:
+        self.timestamp.append(ts)
+        self.smart_entry_high.append(high)
+        self.smart_entry_low.append(low)
+        self.price.append(price)
 
 class LiveChart:
 
-    def __init__(self, n_lines=3, title="Live Chart", xlabel="X", ylabel="Y"):
+    def __init__(self, data:PriceData, n_lines=3, title="Live Chart", xlabel="X", ylabel="Y"):
+        self.data: PriceData = data
         self.delta_time = time.time()
         plt.ion()  # enable interactive mode
         self.fig, self.ax = plt.subplots()
@@ -42,18 +49,18 @@ class LiveChart:
         plt.show(block=False)
         self.started = True
 
-    def update(self, data:PriceData, pause_time=0.01):
+    def update(self, pause_time=0.01):
         """
         Updates the chart with new data for all lines.\n\n
         """
-        y_list = [data.smart_entry_high, data.smart_entry_low, data.price]
+        y_list = [self.data.smart_entry_high, self.data.smart_entry_low, self.data.price]
         if not self.started:
-            self.start(data)
+            self.start(self.data)
             return
 
 
         for line, y_data in zip(self.lines, y_list):
-            line.set_data(data.timestamp, y_data)
+            line.set_data(self.data.timestamp, y_data)
         if time.time() - self.delta_time > 10:
             plt.show(block=False)
             self.delta_time = time.time()

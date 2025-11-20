@@ -55,5 +55,6 @@ class Loading:
     def end(self, message = None):
         if message is None:
             message = self.message
+        print(" " * (len(self.message)+2), end="\r")
         print(message)
 
