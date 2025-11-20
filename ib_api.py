@@ -9,6 +9,7 @@ import math
 
 TESTING = True
 if TESTING:
+    print("Running in TESTING mode.")
     from random import randint
     def get_cboe_datetime() -> datetime:
         """Return the current datetime in Cboe (Chicago) timezone."""
