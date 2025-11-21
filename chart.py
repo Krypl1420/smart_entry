@@ -68,7 +68,6 @@ class LiveChart:
         self.ax.autoscale_view()
         self.fig.canvas.draw_idle()
         self.fig.canvas.flush_events()
-        plt.pause(pause_time)
     
     def chart_pause(self, pause_time=0.01):
         self.fig.canvas.draw_idle()

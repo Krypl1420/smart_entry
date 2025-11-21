@@ -22,15 +22,13 @@ async def main():
             ib.get_latest_tick_mes()
             )
             if high_low != (None,None):
+                prices.append(new_tick.timestamp, high_low[0], high_low[1], new_tick.price)
                 loading.end("Data nalezeny")
                 del loading
                 break
             if new_tick != last_tick:
                 last_tick = new_tick
-                prices.timestamp.append(new_tick.timestamp)
-                prices.price.append(new_tick.price)
-                prices.smart_entry_high.append(None)
-                prices.smart_entry_low.append(None)
+                prices.append(new_tick.timestamp, None, None, new_tick.price)
                 chart.update(prices)
 
             await asyncio.sleep(0.1)
@@ -61,7 +59,7 @@ async def main():
         elif price.price[-1] < price.smart_entry_low[-1]:
             return await ib.trade_mes("SELL",quantity)
         else:
-            price
+            print("No trade conditions met.")
         return None
     
 
@@ -78,10 +76,10 @@ async def main():
     d: DiscordFeeder = DiscordFeeder()
     chart: LiveChart = LiveChart(prices,title="Smart entry", xlabel="Time", ylabel="Price")
     loading = Loading("Čekám na smart entry data: ")
-    current_timer: Timer = Timer("next_5m_close")
-
+    await _wait_for_entry_data(prices, d, ib, loading, chart)
+    current_timer: Timer = Timer(60)
+    loading = Loading("Čekám na první 5-min close")
     try:
-        await _wait_for_entry_data(prices, d, ib, loading, chart)
         while True:
             new_tick = await ib.get_latest_tick_mes()
             new_price_data: bool = new_tick != last_tick
@@ -90,11 +88,14 @@ async def main():
                 prices.append(new_tick.timestamp, prices.smart_entry_high[-1], prices.smart_entry_low[-1], new_tick.price)
 
             if current_timer.check():
+                loading.end("5-minutové okno uzavřeno, kontroluji objednávky...")
                 await _manage_orders(prices, ib, quantity=1)
-                current_timer = Timer("next_5m_close")
+                loading = Loading("Čekám na druhý 5-min close")
+                current_timer = Timer(60)
 
             _manage_price_data(prices)
             last_tick = new_tick
+            loading.update()
             chart.update()
             chart.chart_pause()
             await asyncio.sleep(0.05)
